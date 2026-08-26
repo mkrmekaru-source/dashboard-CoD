@@ -13,20 +13,6 @@ with open('.streamlit/config.toml', 'w') as f:
 
 st.set_page_config(page_title="Dashboard KvK - Call of Dragons", layout="wide")
 
-# --- AJUSTA A ESCALA GERAL DA PÁGINA PARA 85% ---
-st.markdown(
-    """
-    <style>
-        .stApp {
-            zoom: 0.85;
-            -moz-transform: scale(0.85);
-            -moz-transform-origin: 0 0;
-        }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
 def traduzir_data_arquivo(nome_arquivo):
     try:
         nome_base = os.path.basename(nome_arquivo)
@@ -124,7 +110,7 @@ def formata_br(val):
     except:
         return str(val)
 
-# --- FUNÇÃO OTIMIZADA PARA RENDERIZAR OS TOP 15 NA WEB ---
+# --- FUNÇÃO PARA RENDERIZAR OS TOP 15 NA WEB ---
 def renderizar_graficos_top15(df_plot, sufixo_titulo=""):
     if df_plot is None or df_plot.empty:
         st.info(f"Sem dados suficientes para exibir os gráficos {sufixo_titulo}.")
