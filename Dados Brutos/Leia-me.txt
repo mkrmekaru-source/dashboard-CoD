@@ -1,1 +1,4 @@
 
+Nesta pasta, jogar todas as informaçoes brutas gerada pelo gerados de dados
+
+jogar somente os arquivos do KVK ou do periodo.
