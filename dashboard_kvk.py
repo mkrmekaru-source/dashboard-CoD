@@ -13,6 +13,73 @@ with open('.streamlit/config.toml', 'w') as f:
 
 st.set_page_config(page_title="Dashboard KvK - Call of Dragons", layout="wide")
 
+# --- CSS: MODO COMPACTO (REDUÇÃO DE TEXTO E ESPAÇAMENTO A ~85%) ---
+st.markdown(
+    """
+    <style>
+        /* Redução da base de tipografia geral */
+        html, body, [class*="css"] {
+            font-size: 13.5px;
+        }
+        
+        /* Títulos principais mais compactos */
+        h1 { font-size: 1.8rem !important; margin-bottom: 0.5rem !important; }
+        h2 { font-size: 1.35rem !important; }
+        h3 { font-size: 1.15rem !important; margin-top: 1rem !important; margin-bottom: 0.5rem !important; }
+        h4 { font-size: 1.0rem !important; }
+        
+        /* Redução dos Cards de Métricas */
+        [data-testid="stMetricValue"] {
+            font-size: 1.35rem !important;
+        }
+        [data-testid="stMetricLabel"] {
+            font-size: 0.82rem !important;
+        }
+        
+        /* Otimização de margem do topo */
+        .block-container {
+            padding-top: 1.5rem !important;
+            padding-bottom: 2rem !important;
+        }
+
+        /* Tabela DKP compacta (Fonte 12px e padding reduzido) */
+        .custom-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            font-family: sans-serif; 
+            font-size: 12px; 
+            color: white; 
+            background-color: #0e1117; 
+            white-space: nowrap; 
+        }
+        .custom-table th { 
+            background-color: #262730; 
+            padding: 6px 10px; 
+            text-align: center; 
+            border-bottom: 2px solid #444; 
+            font-size: 12px;
+        }
+        .custom-table td { 
+            padding: 6px 10px; 
+            text-align: center; 
+            border-bottom: 1px solid #333; 
+            color: white; 
+            font-size: 12px;
+        }
+        .custom-table th:nth-child(1), .custom-table td:nth-child(1) { text-align: center; color: #4da6ff; font-weight: bold; }
+        .custom-table th:nth-child(2), .custom-table td:nth-child(2),
+        .custom-table th:nth-child(3), .custom-table td:nth-child(3),
+        .custom-table th:nth-child(4), .custom-table td:nth-child(4) { text-align: left; }
+        .custom-table tr:hover { background-color: #1a1c23; }
+        .scrollable-container { overflow-x: auto; width: 100%; margin-top: 8px; }
+        
+        .destaque-header { background-color: #1f3a5f !important; color: #4da6ff !important; border-bottom: 3px solid #4da6ff !important; font-weight: bold; }
+        .destaque-body { background-color: #132238 !important; color: #70a1ff !important; font-weight: bold; }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 def traduzir_data_arquivo(nome_arquivo):
     try:
         nome_base = os.path.basename(nome_arquivo)
@@ -110,7 +177,7 @@ def formata_br(val):
     except:
         return str(val)
 
-# --- FUNÇÃO PARA RENDERIZAR OS TOP 15 NA WEB ---
+# --- FUNÇÃO OTIMIZADA PARA RENDERIZAR OS TOP 15 NA WEB ---
 def renderizar_graficos_top15(df_plot, sufixo_titulo=""):
     if df_plot is None or df_plot.empty:
         st.info(f"Sem dados suficientes para exibir os gráficos {sufixo_titulo}.")
@@ -154,8 +221,10 @@ def renderizar_graficos_top15(df_plot, sufixo_titulo=""):
         )
         fig.update_traces(textposition='outside')
         fig.update_layout(
+            font=dict(size=11),
+            title_font=dict(size=13),
             yaxis={'categoryorder': 'total ascending'},
-            margin=dict(l=20, r=30, t=40, b=20)
+            margin=dict(l=10, r=25, t=35, b=15)
         )
         coluna_layout.plotly_chart(fig, use_container_width=True)
 
@@ -333,20 +402,6 @@ else:
     ]
 
     html_table = """
-    <style>
-        .custom-table { width: 100%; border-collapse: collapse; font-family: sans-serif; font-size: 14px; color: white; background-color: #0e1117; white-space: nowrap; }
-        .custom-table th { background-color: #262730; padding: 10px 15px; text-align: center; border-bottom: 2px solid #444; }
-        .custom-table td { padding: 10px 15px; text-align: center; border-bottom: 1px solid #333; color: white; }
-        .custom-table th:nth-child(1), .custom-table td:nth-child(1) { text-align: center; color: #4da6ff; font-weight: bold; }
-        .custom-table th:nth-child(2), .custom-table td:nth-child(2),
-        .custom-table th:nth-child(3), .custom-table td:nth-child(3),
-        .custom-table th:nth-child(4), .custom-table td:nth-child(4) { text-align: left; }
-        .custom-table tr:hover { background-color: #1a1c23; }
-        .scrollable-container { overflow-x: auto; width: 100%; margin-top: 10px; }
-        
-        .destaque-header { background-color: #1f3a5f !important; color: #4da6ff !important; border-bottom: 3px solid #4da6ff !important; font-weight: bold; }
-        .destaque-body { background-color: #132238 !important; color: #70a1ff !important; font-weight: bold; }
-    </style>
     <div class="scrollable-container">
     <table class="custom-table">
         <thead>
