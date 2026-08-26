@@ -5,7 +5,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# --- TRUQUE PARA FORÇAR O TEMA ESCURO ---
+# --- FORÇA O TEMA ESCURO NO STREAMLIT ---
 os.makedirs('.streamlit', exist_ok=True)
 with open('.streamlit/config.toml', 'w') as f:
     f.write('[theme]\nbase="dark"\n')
@@ -35,6 +35,7 @@ def carregar_dados(file_start, file_end):
     df_merged['Nome'] = df_merged['name_end'].fillna('Desconhecido').astype(str)
     df_merged['Servidor'] = df_merged['home_server_end'].fillna('0').astype(int).astype(str)
     
+    # Identificação da aliança
     alianca_final = df_merged['alliance_tag_end'].fillna('').astype(str).str.strip()
     alianca_inicial = df_merged['alliance_tag_start'].fillna('').astype(str).str.strip() if 'alliance_tag_start' in df_merged.columns else pd.Series(['']*len(df_merged))
     
@@ -104,78 +105,74 @@ def renderizar_apenas_delta(delta):
         return "0"
 
 def formata_br(val):
-    return f"{val:,.0f}".replace(",", ".")
+    try:
+        return f"{int(val):,}".replace(",", ".")
+    except:
+        return str(val)
 
+# --- FUNÇÃO OTIMIZADA PARA RENDERIZAR OS TOP 15 NA WEB ---
 def renderizar_graficos_top15(df_plot, sufixo_titulo=""):
+    if df_plot is None or df_plot.empty:
+        st.info(f"Sem dados suficientes para exibir os gráficos {sufixo_titulo}.")
+        return
+
     st.markdown(f"<br>### 📈 Ranking Top 15 Jogadores {sufixo_titulo}", unsafe_allow_html=True)
     
     c1, c2 = st.columns(2)
     c3, c4 = st.columns(2)
-    c5, c6 = st.columns(2)
+    c5, _ = st.columns(2)
     
-    top_merits = df_plot.sort_values(by='merits_gained', ascending=False).head(15).copy()
-    top_merits['texto_bar'] = top_merits['merits_gained'].apply(formata_br)
-    fig_merits = px.bar(top_merits, x='merits_gained', y='Nome', orientation='h', title="Top 15 - Méritos Obtidos", color='merits_gained', color_continuous_scale="Blues", template="plotly_dark", text='texto_bar')
-    fig_merits.update_traces(textposition='outside')
-    fig_merits.update_layout(yaxis={'categoryorder':'total ascending'})
-    c1.plotly_chart(fig_merits, use_container_width=True)
+    graficos_config = [
+        ("merits_gained", "Top 15 - Méritos Obtidos", "Blues", c1),
+        ("dead_gained", "Top 15 - Tropas Mortas (Baixas Definitivas)", "Greys", c2),
+        ("healed_gained", "Top 15 - Tropas Curadas", "Greens", c3),
+        ("kills_gained", "Top 15 - Kills (Inimigos)", "Reds", c4),
+        ("mana_gained", "Top 15 - Mana Coletada", "Purples", c5),
+    ]
     
-    top_dead = df_plot.sort_values(by='dead_gained', ascending=False).head(15).copy()
-    top_dead['texto_bar'] = top_dead['dead_gained'].apply(formata_br)
-    fig_dead = px.bar(top_dead, x='dead_gained', y='Nome', orientation='h', title="Top 15 - Tropas Mortas (Baixas Definitivas)", color='dead_gained', color_continuous_scale="Greys", template="plotly_dark", text='texto_bar')
-    fig_dead.update_traces(textposition='outside')
-    fig_dead.update_layout(yaxis={'categoryorder':'total ascending'})
-    c2.plotly_chart(fig_dead, use_container_width=True)
-
-    top_healed = df_plot.sort_values(by='healed_gained', ascending=False).head(15).copy()
-    top_healed['texto_bar'] = top_healed['healed_gained'].apply(formata_br)
-    fig_healed = px.bar(top_healed, x='healed_gained', y='Nome', orientation='h', title="Top 15 - Tropas Curadas", color='healed_gained', color_continuous_scale="Greens", template="plotly_dark", text='texto_bar')
-    fig_healed.update_traces(textposition='outside')
-    fig_healed.update_layout(yaxis={'categoryorder':'total ascending'})
-    c3.plotly_chart(fig_healed, use_container_width=True)
-
-    top_kills = df_plot.sort_values(by='kills_gained', ascending=False).head(15).copy()
-    top_kills['texto_bar'] = top_kills['kills_gained'].apply(formata_br)
-    fig_kills = px.bar(top_kills, x='kills_gained', y='Nome', orientation='h', title="Top 15 - Kills (Inimigos)", color='kills_gained', color_continuous_scale="Reds", template="plotly_dark", text='texto_bar')
-    fig_kills.update_traces(textposition='outside')
-    fig_kills.update_layout(yaxis={'categoryorder':'total ascending'})
-    c4.plotly_chart(fig_kills, use_container_width=True)
-
-    top_mana = df_plot.sort_values(by='mana_gained', ascending=False).head(15).copy()
-    top_mana['texto_bar'] = top_mana['mana_gained'].apply(formata_br)
-    fig_mana = px.bar(top_mana, x='mana_gained', y='Nome', orientation='h', title="Top 15 - Mana Coletada", color='mana_gained', color_continuous_scale="Purples", template="plotly_dark", text='texto_bar')
-    fig_mana.update_traces(textposition='outside')
-    fig_mana.update_layout(yaxis={'categoryorder':'total ascending'})
-    c5.plotly_chart(fig_mana, use_container_width=True)
-
+    for metrica, titulo, escala_cor, coluna_layout in graficos_config:
+        if metrica not in df_plot.columns:
+            continue
+            
+        dados = df_plot.copy()
+        dados[metrica] = pd.to_numeric(dados[metrica], errors='coerce').fillna(0)
+        top15 = dados.sort_values(by=metrica, ascending=False).head(15).copy()
+        top15['Nome'] = top15['Nome'].astype(str)
+        top15['texto_bar'] = top15[metrica].apply(formata_br)
+        
+        fig = px.bar(
+            top15,
+            x=metrica,
+            y='Nome',
+            orientation='h',
+            title=titulo,
+            color=metrica,
+            color_continuous_scale=escala_cor,
+            template="plotly_dark",
+            text='texto_bar'
+        )
+        fig.update_traces(textposition='outside')
+        fig.update_layout(
+            yaxis={'categoryorder': 'total ascending'},
+            margin=dict(l=20, r=30, t=40, b=20)
+        )
+        coluna_layout.plotly_chart(fig, use_container_width=True)
 
 st.title("⚔️ Dashboard Interativo - KvK")
 
 # =====================================================================
-# CAIXA DE PASTA NO TOPO DO MENU
+# BUSCA AUTOMÁTICA DE ARQUIVOS EXCEL NO REPOSITÓRIO DO GITHUB
 # =====================================================================
-st.sidebar.header("📁 Fonte de Dados")
-caminho_padrao = r"C:\Users\User\Desktop\Python\Script Py Comparativo KVK\kvk - SoS2-4090 - 23.08.2026 (last)"
-
-caminho_pasta = st.sidebar.text_input(
-    "Caminho da pasta com os arquivos Excel:", 
-    value=caminho_padrao, 
-    help="Cole o caminho da pasta onde estão os relatórios."
-)
-st.sidebar.divider()
-
-if caminho_pasta and os.path.isdir(caminho_pasta):
-    padrao_busca = os.path.join(caminho_pasta, "kvk_*.xlsx")
-else:
-    padrao_busca = "kvk_*.xlsx"
-
-arquivos = sorted(glob.glob(padrao_busca))
+arquivos = sorted(glob.glob("**/kvk_*.xlsx", recursive=True) + glob.glob("kvk_*.xlsx"))
+arquivos = sorted(list(set(arquivos)))
 
 if len(arquivos) < 2:
-    if caminho_pasta and not os.path.isdir(caminho_pasta):
-        st.error(f"Erro: O caminho da pasta inserido não é válido ou não existe: {caminho_pasta}")
-    else:
-        st.error(f"Erro: Você precisa de pelo menos 2 arquivos 'kvk_...' na pasta para comparar.")
+    # Se os nomes dos arquivos não começarem com 'kvk_', busca qualquer .xlsx
+    arquivos = sorted(glob.glob("**/*.xlsx", recursive=True) + glob.glob("*.xlsx"))
+    arquivos = sorted(list(set(arquivos)))
+
+if len(arquivos) < 2:
+    st.error("⚠️ Você precisa subir pelo menos 2 arquivos Excel (.xlsx) no repositório do GitHub para realizar as comparações.")
 else:
     st.sidebar.header("Filtros e Configurações")
     
@@ -387,7 +384,7 @@ else:
     renderizar_graficos_top15(df_filtrado, "(Geral)")
 
     # ===============================================================================================
-    # NOVA SESSÃO: TABELA EXCLUSIVA PARA JOGADORES BRASILEIROS
+    # TABELA EXCLUSIVA PARA JOGADORES BRASILEIROS
     # ===============================================================================================
     st.markdown("<br><br><br>", unsafe_allow_html=True)
     st.divider()
@@ -404,7 +401,7 @@ else:
     ids_ausentes = [str(br_id) for br_id in lista_br_ids if br_id not in ids_encontrados]
     
     if ids_ausentes:
-        st.warning(f"⚠️ Atenção: Os seguintes IDs não foram encontrados no relatório atual e podem ter parado de jogar. Considere removê-los do script caso necessário: **{', '.join(ids_ausentes)}**")
+        st.warning(f"⚠️ Atenção: Os seguintes IDs não foram encontrados no relatório atual: **{', '.join(ids_ausentes)}**")
     
     if not df_br.empty:
         df_br = df_br.sort_values(by=chave_ativa, ascending=False)
@@ -484,25 +481,3 @@ else:
         
     else:
         st.info("Nenhum jogador brasileiro foi encontrado nos arquivos selecionados.")
-
-
-
-
-
-
-
-    # =====================================================================
-    # GUIA DE INSTRUÇÕES NO FINAL DA BARRA LATERAL
-    # =====================================================================
-    st.sidebar.divider()
-    st.sidebar.markdown(
-        "### 📖 Guia de Uso Futuro\n\n"
-        "**Passos para os próximos KvKs:**\n\n"
-        "1. Mantenha o script `dashboard_kvk.py` na pasta principal.\n"
-        "2. Crie uma **nova pasta** (ex: *kvk - temp 3*) e jogue os relatórios `.xlsx` dentro dela.\n"
-        "3. Copie o caminho dessa nova pasta no Windows.\n"
-        "4. Cole o caminho na caixa de texto do topo e dê **Enter**.\n\n"
-        "---\n\n"
-        "**💻 Comando para abrir o painel (Terminal):**\n\n"
-        "`python -m streamlit run dashboard_kvk.py`"
-    )
