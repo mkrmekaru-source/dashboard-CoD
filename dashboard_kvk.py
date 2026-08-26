@@ -13,6 +13,20 @@ with open('.streamlit/config.toml', 'w') as f:
 
 st.set_page_config(page_title="Dashboard KvK - Call of Dragons", layout="wide")
 
+# --- AJUSTA A ESCALA GERAL DA PÁGINA PARA 85% ---
+st.markdown(
+    """
+    <style>
+        .stApp {
+            zoom: 0.85;
+            -moz-transform: scale(0.85);
+            -moz-transform-origin: 0 0;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 def traduzir_data_arquivo(nome_arquivo):
     try:
         nome_base = os.path.basename(nome_arquivo)
@@ -116,7 +130,8 @@ def renderizar_graficos_top15(df_plot, sufixo_titulo=""):
         st.info(f"Sem dados suficientes para exibir os gráficos {sufixo_titulo}.")
         return
 
-    st.markdown(f"<br>### 📈 Ranking Top 15 Jogadores {sufixo_titulo}", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown(f"### 📈 Ranking Top 15 Jogadores {sufixo_titulo}")
     
     c1, c2 = st.columns(2)
     c3, c4 = st.columns(2)
@@ -167,7 +182,6 @@ arquivos = sorted(glob.glob("**/kvk_*.xlsx", recursive=True) + glob.glob("kvk_*.
 arquivos = sorted(list(set(arquivos)))
 
 if len(arquivos) < 2:
-    # Se os nomes dos arquivos não começarem com 'kvk_', busca qualquer .xlsx
     arquivos = sorted(glob.glob("**/*.xlsx", recursive=True) + glob.glob("*.xlsx"))
     arquivos = sorted(list(set(arquivos)))
 
